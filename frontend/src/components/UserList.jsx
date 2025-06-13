@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import api from './api';
-
+ 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
+ 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
-
+ 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -20,14 +20,14 @@ const UserList = () => {
         setLoading(false);
       }
     };
-
+ 
     fetchUsers();
   }, []);
-
+ 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm('Are you sure you want to delete this user?');
     if (!confirmDelete) return;
-
+ 
     try {
       await api.delete(`/api/admin/users/${id}`);
       setUsers((prevUsers) => prevUsers.filter((user) => user._id !== id));
@@ -35,28 +35,28 @@ const UserList = () => {
       console.error('Failed to delete user:', error.message);
     }
   };
-
+ 
   // Pagination calculations
   const totalPages = Math.ceil(users.length / usersPerPage);
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
-
+ 
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
   };
-
+ 
   if (loading) {
     return <div className="text-center text-lg font-semibold py-10 text-gray-600 animate-pulse">Loading users...</div>;
   }
-
+ 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
         <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-8 tracking-tight">📋 User Management</h2>
-
+ 
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-gray-700">
             <thead className="bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 text-gray-800">
@@ -97,7 +97,7 @@ const UserList = () => {
             </tbody>
           </table>
         </div>
-
+ 
         {/* Pagination */}
         <div className="mt-6 flex justify-center items-center space-x-2 text-sm">
           <button
@@ -130,5 +130,5 @@ const UserList = () => {
     </div>
   );
 };
-
+ 
 export default UserList;

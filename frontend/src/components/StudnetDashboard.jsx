@@ -1,47 +1,50 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
+import { User, FileText, FlaskConical } from 'lucide-react'; // BookOpen removed as it’s unused
 
 const StudentDashboard = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-purple-50 to-pink-50 px-6 py-16">
-      <h1 className="text-4xl font-semibold mb-6 text-purple-600 relative">
-        Welcome to the Student Dashboard
-        <span className="absolute left-1/2 -bottom-2 w-20 h-1 bg-purple-300 rounded-full -translate-x-1/2"></span>
-      </h1>
+    <div className="min-h-screen flex bg-gradient-to-br from-purple-100 via-pink-100 to-white">
+      
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-xl border-r border-gray-200 p-6 flex flex-col">
+        <h2 className="text-2xl font-bold text-purple-700 mb-8 tracking-wide">
+          🎓 Student Panel
+        </h2>
+        
+        <nav className="flex flex-col gap-5 text-base font-medium text-purple-800">
+          <Link to="/student/profile" className="flex items-center gap-3 hover:text-purple-600 transition">
+            <User size={20} /> My Profile
+          </Link>
+          <Link to="/student/quizzes" className="flex items-center gap-3 hover:text-purple-600 transition">
+            <FlaskConical size={20} /> My Courses
+          </Link>
+          <Link to="/student/results" className="flex items-center gap-3 hover:text-purple-600 transition">
+            <FileText size={20} /> Results
+          </Link>
+        </nav>
 
-      <p className="max-w-xl text-center text-purple-700 mb-10 text-base leading-relaxed font-normal">
-        Hello! We're excited to have you here at{' '}
-        <span className="font-semibold underline decoration-pink-300 decoration-1">Vegaahi</span>. 
-        Prepare yourself with our curated mock tests designed to boost your skills and confidence.
-      </p>
+        <div className="mt-auto pt-10 text-sm text-gray-400 font-light">
+          &copy; {new Date().getFullYear()} Vegaahi
+        </div>
+      </aside>
 
-      <h2 className="text-2xl font-semibold mb-4 text-pink-400">
-        Vegaahi Mock Test
-      </h2>
-      <p className="max-w-xl text-center text-gray-600 mb-8 leading-relaxed text-base">
-        Take the Vegaahi Mock Test to simulate real exam conditions and improve your performance.
-        These tests are designed by experts to cover important topics and help you track your progress.
-      </p>
+      {/* Main Content */}
+      <main className="flex-1 p-10 overflow-y-auto">
+        <div className="mb-10">
+          <h1 className="text-4xl font-extrabold text-purple-700 mb-4">
+            Welcome to nDMatrix
+          </h1>
+          <p className="text-lg text-purple-600 leading-relaxed max-w-3xl">
+            We're thrilled to have you here! 💫 Prepare yourself with curated mock tests, essential resources, and personalized progress tracking to elevate your learning journey.
+          </p>
+        </div>
 
-      <div className="flex gap-4 justify-center mb-12">
-        <Link
-          to="/student/profile"
-          className="bg-purple-300 text-purple-900 px-6 py-2 rounded-lg shadow-sm hover:bg-purple-400 transition"
-        >
-         Profile
-        </Link>
-
-        <Link
-          to="/student/quizzes"
-          className="bg-pink-300 text-pink-900 px-6 py-2 rounded-lg shadow-sm hover:bg-pink-400 transition"
-        >
-          Start Quiz
-        </Link>
-      </div>
-
-      <footer className="text-purple-500 italic font-medium text-sm">
-        &copy; {new Date().getFullYear()} Vegaahi — Empowering Your Learning Journey
-      </footer>
+        {/* Renders nested routes like profile, courses, results, etc. */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 };

@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from './api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'student',
-    address: '',
     phoneNumber: '',
-    collegeName: '',
     collegeId: '',
+    collegeName: '',
   });
 
   const [profilePicture, setProfilePicture] = useState(null);
@@ -28,12 +26,31 @@ const Register = () => {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.name === 'profilePicture') {
-      setProfilePicture(e.target.files[0]);
-    } else if (e.target.name === 'collegeIdCard') {
-      setCollegeIdCard(e.target.files[0]);
+  const file = e.target.files[0];
+  const { name } = e.target;
+
+  if (!file) return;
+
+  const fileSizeKB = file.size / 1024; // Convert bytes to kilobytes
+
+  if (name === 'profilePicture') {
+    if (fileSizeKB < 50 || fileSizeKB > 250) {
+      setError('Profile Picture must be between 50KB and 250KB');
+      setProfilePicture(null);
+      return;
     }
-  };
+    setError('');
+    setProfilePicture(file);
+  } else if (name === 'collegeIdCard') {
+    if (fileSizeKB < 100 || fileSizeKB > 500) {
+      setError('College ID Card must be between 100KB and 500KB');
+      setCollegeIdCard(null);
+      return;
+    }
+    setError('');
+    setCollegeIdCard(file);
+  }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,18 +72,6 @@ const Register = () => {
       });
 
       setMessage(res.data.message || 'Registered successfully');
-      setFormData({
-        name: '',
-        email: '',
-        role: 'student',
-        address: '',
-        phoneNumber: '',
-        collegeName: '',
-        collegeId: '',
-      });
-      setProfilePicture(null);
-      setCollegeIdCard(null);
-
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -74,116 +79,106 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-purple-100 to-blue-100 flex items-center justify-center px-4">
-      <div className="bg-white p-8 shadow-2xl rounded-3xl w-full max-w-md m-auto border border-blue-300">
-        <h2 className="text-2xl font-semibold text-center text-blue-800 mb-6">Create an Account</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 px-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 w-full max-w-2xl">
+        <h1 className="text-3xl font-bold text-center text-gray-900 mb-1">Student Registration</h1>
+        <p className="text-center text-sm text-gray-600 mb-6">Join nDMatrix Online Examination Portal</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Create Your Account</h2>
+        <p className="text-sm text-center text-gray-500 mb-8">Please fill in all required information</p>
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4" encType="multipart/form-data">
           <input
             type="text"
             name="name"
-            placeholder="Full Name"
+            placeholder="Full Name *"
             value={formData.name}
             onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
             required
+            className="p-3 border rounded-lg"
           />
-
           <input
             type="email"
             name="email"
-            placeholder="Email Address"
+            placeholder="Email Address *"
             value={formData.email}
             onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
             required
+            className="p-3 border rounded-lg"
           />
-
-          <input
-            type="text"
-            name="address"
-            placeholder="Address"
-            value={formData.address}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
-            required
-          />
-
           <input
             type="text"
             name="phoneNumber"
-            placeholder="Phone Number"
+            placeholder="Phone Number *"
             value={formData.phoneNumber}
             onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
             required
+            className="p-3 border rounded-lg"
           />
-
-          <input
-            type="text"
-            name="collegeName"
-            placeholder="College Name"
-            value={formData.collegeName}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
-            required
-          />
-
           <input
             type="text"
             name="collegeId"
-            placeholder="College ID"
+            placeholder="College ID Number *"
             value={formData.collegeId}
             onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
             required
+            className="p-3 border rounded-lg"
           />
-
-          <select
-            name="role"
-            value={formData.role}
+          <textarea
+            name="collegeName"
+            placeholder="College Name *"
+            value={formData.collegeName}
             onChange={handleChange}
-            className="w-full p-3 border rounded-xl"
-          >
-            <option value="student">Student</option>
-            <option value="admin">Admin</option>
-          </select>
-
-          <label className="block text-sm text-gray-600">Profile Picture</label>
-          <input
-            type="file"
-            name="profilePicture"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded-xl"
+            required
+            className="p-3 border rounded-lg col-span-1 md:col-span-2"
           />
 
-          <label className="block text-sm text-gray-600">College ID Card</label>
-          <input
-            type="file"
-            name="collegeIdCard"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded-xl"
-          />
+          {/* File Uploads */}
+          <div className="col-span-1">
+            <label className="text-sm text-gray-600 block mb-1">Profile Picture * (50KB–250KB)</label>
+            <div className="border border-dashed rounded-lg p-3 text-center text-sm text-gray-500">
+              <input
+                type="file"
+                name="profilePicture"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full"
+              />
+            </div>
+          </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition"
-          >
-            Register
-          </button>
+          <div className="col-span-1">
+            <label className="text-sm text-gray-600 block mb-1">College ID Card * (100KB–500KB)</label>
+            <div className="border border-dashed rounded-lg p-3 text-center text-sm text-gray-500">
+              <input
+                type="file"
+                name="collegeIdCard"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full"
+              />
+            </div>
+          </div>
+          {/* Buttons */}
+          <div className="col-span-2 flex justify-between items-center mt-6">
+            <button
+              type="button"
+              className="px-6 py-3 border border-gray-400 rounded-lg text-gray-700 hover:bg-gray-100"
+              onClick={() => navigate(-1)}
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-blue-700 transition"
+            >
+              Register
+            </button>
+          </div>
         </form>
 
         {message && <p className="mt-4 text-green-600 text-center">{message}</p>}
         {error && <p className="mt-4 text-red-600 text-center">{error}</p>}
-
-        <div className="text-center mt-6 text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login here
-          </Link>
-        </div>
       </div>
     </div>
   );

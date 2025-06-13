@@ -16,7 +16,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="text-2xl font-extrabold text-purple-600 hover:text-indigo-800 tracking-tight">
-            VEGAAHI IT PVT LTD
+          Online Test
           </Link>
 
           {/* Desktop Links */}

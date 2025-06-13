@@ -75,7 +75,5 @@ const QuizSubmissions = () => {
     </div>
   );
 };
- 
+
 export default QuizSubmissions;
- 
- 

@@ -1,42 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "./api";
-
+ 
 const emptyQuestion = () => ({
   text: "",
   options: ["", "", "", ""],
   correctOptionIndex: 0,
 });
-
+ 
 const AdminQuizEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
+ 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+ 
   const [questions, setQuestions] = useState([]);
-
+ 
   useEffect(() => {
     fetchQuiz();
   }, [id]);
-
+ 
   const fetchQuiz = async () => {
     try {
       setLoading(true);
       const res = await api.get(`/api/quizzes/${id}`);
-
+ 
       setQuiz(res.data);
-
+ 
       const qs = Array.isArray(res.data.questions) ? res.data.questions : [];
-
+ 
       const transformedQs = qs.map((q) => ({
         text: q.questionText || "",
         options: q.options || ["", "", "", ""],
         correctOptionIndex: q.correctAnswer ?? 0,
       }));
-
+ 
       setQuestions(transformedQs);
       setLoading(false);
     } catch (err) {
@@ -44,16 +44,16 @@ const AdminQuizEdit = () => {
       setLoading(false);
     }
   };
-
+ 
   const addQuestion = () => {
     setQuestions((prev) => [...prev, emptyQuestion()]);
   };
-
+ 
   const deleteQuestion = (index) => {
     if (!window.confirm("Delete this question?")) return;
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   };
-
+ 
   const updateQuestionText = (index, text) => {
     setQuestions((prev) => {
       const newQs = [...prev];
@@ -61,7 +61,7 @@ const AdminQuizEdit = () => {
       return newQs;
     });
   };
-
+ 
   const updateOptionText = (qIndex, optionIndex, text) => {
     setQuestions((prev) => {
       const newQs = [...prev];
@@ -69,7 +69,7 @@ const AdminQuizEdit = () => {
       return newQs;
     });
   };
-
+ 
   const updateCorrectOption = (qIndex, correctIndex) => {
     setQuestions((prev) => {
       const newQs = [...prev];
@@ -77,7 +77,7 @@ const AdminQuizEdit = () => {
       return newQs;
     });
   };
-
+ 
   const saveQuestions = async () => {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
@@ -90,13 +90,13 @@ const AdminQuizEdit = () => {
         return;
       }
     }
-
+ 
     const questionsToSave = questions.map((q) => ({
       questionText: q.text,
       options: q.options,
       correctAnswer: q.correctOptionIndex,
     }));
-
+ 
     try {
       await api.put(`/api/quizzes/${id}`, { questions: questionsToSave });
       alert("Questions saved successfully");
@@ -105,7 +105,7 @@ const AdminQuizEdit = () => {
       alert("Failed to save questions");
     }
   };
-
+ 
   if (loading)
     return (
       <p className="p-6 text-center text-gray-500 text-lg italic">Loading quiz...</p>
@@ -114,13 +114,13 @@ const AdminQuizEdit = () => {
     return (
       <p className="p-6 text-center text-red-600 font-semibold text-lg">{error}</p>
     );
-
+ 
   return (
     <div className="max-w-6xl mx-auto p-8 bg-gradient-to-tr from-white to-blue-50 rounded-xl shadow-2xl">
       <h1 className="text-4xl font-extrabold mb-10 text-center text-gradient bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-700 bg-clip-text text-transparent">
         Edit Questions for: {quiz.title}
       </h1>
-
+ 
       {questions.map((q, i) => (
         <div
           key={i}
@@ -155,7 +155,7 @@ const AdminQuizEdit = () => {
             value={q.text}
             onChange={(e) => updateQuestionText(i, e.target.value)}
           />
-
+ 
           <div>
             <h3 className="mb-3 font-semibold text-gray-700 tracking-wide">
               Options (mark correct one):
@@ -184,7 +184,7 @@ const AdminQuizEdit = () => {
           </div>
         </div>
       ))}
-
+ 
       <div className="mb-12 text-center">
         <button
           onClick={addQuestion}
@@ -204,7 +204,7 @@ const AdminQuizEdit = () => {
           + Add New Question
         </button>
       </div>
-
+ 
       <div className="text-center">
         <button
           onClick={saveQuestions}
@@ -217,5 +217,5 @@ const AdminQuizEdit = () => {
     </div>
   );
 };
-
+ 
 export default AdminQuizEdit;

@@ -1,26 +1,22 @@
-
 import { Routes, Route } from 'react-router-dom'
 import StudentDashboard from './StudnetDashboard'
 import Studentprofile from './StudentProfile'
 import UserQuizList from './UserQuizList'
 import QuizAttempt from './QuizAttempt'
 import TermsPage from './TermsPage'
-
-
-
+import Results from './Results';
 
 const studentdashboard = () => {
   return (
     <>
       <Routes>
         <Route path="/dashboard" element={<StudentDashboard />} />
-        <Route path="/profile" element={<Studentprofile />} />
+        <Route path="/profile" element={<Studentprofile/>} />
         <Route path="/quizzes" element={<UserQuizList/>} />
-       
+          <Route path="results" element={<Results />} />
 
         <Route path="/quiz/:id" element={<QuizAttempt />} />
         
-    
         {/* Add more routes as needed */}
       </Routes>
     </>

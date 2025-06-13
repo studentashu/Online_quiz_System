@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import api from "./api";
 import { Link } from "react-router-dom";
-
+ 
 const AdminQuizList = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+ 
   useEffect(() => {
     fetchQuizzes();
   }, []);
-
+ 
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
@@ -22,7 +22,7 @@ const AdminQuizList = () => {
       setLoading(false);
     }
   };
-
+ 
   const deleteQuiz = async (id) => {
     if (!window.confirm("Are you sure you want to delete this quiz?")) return;
     try {
@@ -32,13 +32,13 @@ const AdminQuizList = () => {
       alert("Failed to delete quiz: " + (err.response?.data?.message || err.message));
     }
   };
-
+ 
   return (
     <div className="max-w-6xl mx-auto p-10 bg-gradient-to-br from-indigo-50 via-white to-indigo-50 rounded-3xl shadow-xl">
       <h1 className="text-5xl font-extrabold mb-12 text-center text-indigo-900 tracking-wide drop-shadow-md">
         Manage Quizzes
       </h1>
-
+ 
       {loading && (
         <p className="text-center text-indigo-400 text-xl animate-pulse">
           Loading quizzes...
@@ -47,13 +47,13 @@ const AdminQuizList = () => {
       {error && (
         <p className="text-center text-red-600 font-semibold mb-6">{error}</p>
       )}
-
+ 
       {!loading && quizzes.length === 0 && (
         <p className="text-center text-gray-600 text-xl italic">
           No quizzes found.
         </p>
       )}
-
+ 
       {!loading && quizzes.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-indigo-200 shadow-lg bg-white">
           <table className="min-w-full divide-y divide-indigo-200">
@@ -104,7 +104,7 @@ const AdminQuizList = () => {
                       </svg>
                       Edit Questions
                     </Link>
-
+ 
                     <button
                       onClick={() => deleteQuiz(quiz._id)}
                       className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-700 text-white px-5 py-2 rounded-full shadow-lg hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 transition"
@@ -136,5 +136,7 @@ const AdminQuizList = () => {
     </div>
   );
 };
-
+ 
 export default AdminQuizList;
+ 
+ 

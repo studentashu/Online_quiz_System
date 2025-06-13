@@ -11,7 +11,32 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'Only admins can create quizzes' });
     }
 
-    const quiz = new Quiz({ ...req.body, creator: req.user.id });
+    const { title, description, questions } = req.body;
+ console.log(req.body.questions);
+    if (!title || !Array.isArray(questions)) {
+      return res.status(400).json({ message: 'Title and questions are required' });
+    }
+
+    // Validate questions
+    for (const q of questions) {
+      if (!q.questionText || !q.type) {
+        return res.status(400).json({ message: 'Each question must include questionText and type' });
+      }
+
+      if (q.type === 'MCQ') {
+        if (!Array.isArray(q.options) || typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+          return res.status(400).json({ message: 'Invalid MCQ question format' });
+        }
+      } else if (q.type === 'NAT') {
+        if (typeof q.answer !== 'number') {
+          return res.status(400).json({ message: 'NAT questions must include a numeric answer' });
+        }
+      } else {
+        return res.status(400).json({ message: 'Invalid question type' });
+      }
+    }
+
+    const quiz = new Quiz({ title, description, questions, creator: req.user.id });
     await quiz.save();
     res.status(201).json({ message: 'Quiz created', quiz });
   } catch (err) {
@@ -19,7 +44,7 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Check if user attempted this quiz in the last 24 hours
+// Check if user attempted quiz in last 24 hrs
 router.get('/:id/check-attempt', authenticateToken, async (req, res) => {
   try {
     const quizId = req.params.id;
@@ -58,7 +83,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Admin: Update quiz
+// Update quiz
 router.put('/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Forbidden' });
@@ -69,7 +94,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
     const { title, questions } = req.body;
-
     if (title !== undefined) quiz.title = title;
 
     if (questions !== undefined) {
@@ -78,14 +102,20 @@ router.put('/:id', authenticateToken, async (req, res) => {
       }
 
       for (const q of questions) {
-        if (
-          typeof q.questionText !== 'string' ||
-          !Array.isArray(q.options) ||
-          typeof q.correctAnswer !== 'number' ||
-          q.correctAnswer < 0 ||
-          q.correctAnswer >= q.options.length
-        ) {
-          return res.status(400).json({ message: 'Invalid question format' });
+        if (!q.questionText || !q.type) {
+          return res.status(400).json({ message: 'Each question must include questionText and type' });
+        }
+
+        if (q.type === 'MCQ') {
+          if (!Array.isArray(q.options) || typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+            return res.status(400).json({ message: 'Invalid MCQ question format' });
+          }
+        } else if (q.type === 'NAT') {
+          if (typeof q.answer !== 'number') {
+            return res.status(400).json({ message: 'Invalid NAT question format' });
+          }
+        } else {
+          return res.status(400).json({ message: 'Invalid question type' });
         }
       }
 
@@ -99,7 +129,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Admin: Delete quiz
+// Delete quiz
 router.delete('/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Forbidden' });
@@ -107,17 +137,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
   try {
     const deleted = await Quiz.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: 'Quiz not found' });
-    }
+    if (!deleted) return res.status(404).json({ message: 'Quiz not found' });
     res.json({ message: 'Quiz deleted successfully' });
   } catch (err) {
-    console.error("Error deleting quiz:", err);
     res.status(500).json({ message: 'Failed to delete quiz', error: err.message });
   }
 });
 
-// Student: Submit quiz answer
+// Student: Submit quiz answers
+// Student: Submit quiz answers
 router.post('/:id/answer', authenticateToken, async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id);
@@ -127,8 +155,11 @@ router.post('/:id/answer', authenticateToken, async (req, res) => {
     let score = 0;
 
     quiz.questions.forEach((q, i) => {
-      if (answers[i] === q.correctAnswer) {
-        score++;
+      const userAnswer = answers[i];
+      if (q.type === 'MCQ') {
+        if (userAnswer === q.correctAnswer) score++;
+      } else if (q.type === 'NAT') {
+        if (Number(userAnswer) === q.answer) score++;
       }
     });
 
@@ -142,6 +173,9 @@ router.post('/:id/answer', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'You already submitted this quiz in the last 24 hours' });
     }
 
+    const totalQuestions = quiz.questions.length;
+    const percentage = ((score / totalQuestions) * 100).toFixed(2);
+
     const quizAnswer = new QuizAnswer({
       quiz: quiz._id,
       user: req.user.id,
@@ -151,11 +185,18 @@ router.post('/:id/answer', authenticateToken, async (req, res) => {
     });
 
     await quizAnswer.save();
-    res.status(201).json({ message: 'Answer submitted', score });
+
+    res.status(201).json({
+      message: 'Answer submitted',
+      score,
+      totalQuestions,
+      percentage: Number(percentage)
+    });
   } catch (err) {
     res.status(500).json({ message: 'Failed to submit answer', error: err.message });
   }
 });
+
 
 // Admin: View quiz submissions
 router.get('/:id/answers', authenticateToken, async (req, res) => {
@@ -174,27 +215,39 @@ router.get('/:id/answers', authenticateToken, async (req, res) => {
   }
 });
 
-// Admin: Add new question to quiz
+// Admin: Add question
 router.post('/:id/questions', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-  const { questionText, options, correctAnswer } = req.body;
+  const { questionText, type, options, correctAnswer, answer } = req.body;
 
-  if (
-    typeof questionText !== 'string' ||
-    !Array.isArray(options) ||
-    typeof correctAnswer !== 'number' ||
-    correctAnswer < 0 ||
-    correctAnswer >= options.length
-  ) {
-    return res.status(400).json({ message: 'Invalid question format' });
+  if (!questionText || !type) return res.status(400).json({ message: 'Missing questionText or type' });
+
+  if (type === 'MCQ') {
+    if (!Array.isArray(options) || typeof correctAnswer !== 'number' || correctAnswer < 0 || correctAnswer >= options.length) {
+      return res.status(400).json({ message: 'Invalid MCQ question format' });
+    }
+  } else if (type === 'NAT') {
+    if (typeof answer !== 'number') {
+      return res.status(400).json({ message: 'NAT question must include a numeric answer' });
+    }
+  } else {
+    return res.status(400).json({ message: 'Invalid question type' });
   }
 
   try {
     const quiz = await Quiz.findById(req.params.id);
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
-    quiz.questions.push({ questionText, options, correctAnswer });
+    const newQuestion = { questionText, type };
+    if (type === 'MCQ') {
+      newQuestion.options = options;
+      newQuestion.correctAnswer = correctAnswer;
+    } else {
+      newQuestion.answer = answer;
+    }
+
+    quiz.questions.push(newQuestion);
     await quiz.save();
     res.json({ message: 'Question added', quiz });
   } catch (err) {
@@ -202,7 +255,7 @@ router.post('/:id/questions', authenticateToken, async (req, res) => {
   }
 });
 
-// Admin: Delete a question from quiz by index
+// Admin: Delete a question by index
 router.delete('/:id/questions/:index', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
@@ -223,5 +276,18 @@ router.delete('/:id/questions/:index', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Failed to delete question', error: err.message });
   }
 });
+router.get('/results/:email', async (req, res) => {
+  try {
+    const results = await QuizAnswer.find({ email: req.params.email })
+      .populate({
+        path: 'quiz',
+        select: 'title questions' // 👈 make sure questions are selected!
+      });
 
+    res.json(results);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch results' });
+  }
+});
 module.exports = router;

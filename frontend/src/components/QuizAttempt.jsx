@@ -1,8 +1,54 @@
-// src/components/QuizAttempt.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from './api';          // your axios instance
+import api from './api';
 import { useAuth } from '../context/AuthContext';
+import "./QuizAttempt.css";
+function NumericKeypad({ value, onChange, disabled }) {
+  const appendDigit = (digit) => {
+    if (disabled) return;
+    if (digit === '.' && value?.includes('.')) return;
+    onChange((value ?? '') + digit);
+  };
+
+  const backspace = () => {
+    if (disabled) return;
+    onChange((value ?? '').slice(0, -1));
+  };
+
+  const clear = () => {
+    if (disabled) return;
+    onChange('');
+  };
+
+  return (
+    <div className="numeric-keypad grid grid-cols-3 gap-2 w-full max-w-md mx-auto mt-4">
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '←'].map((key) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => {
+            if (key === '←') backspace();
+            else appendDigit(key);
+          }}
+          disabled={disabled}
+          className="py-2 px-3 text-lg border rounded-md hover:bg-gray-100 transition-all disabled:opacity-50"
+        >
+          {key}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={clear}
+        disabled={disabled}
+        className="col-span-3 py-2 px-3 text-lg border rounded-md hover:bg-gray-100 transition-all disabled:opacity-50"
+      >
+        Clear
+      </button>
+    </div>
+  );
+}
+
+
 
 export default function QuizAttempt() {
   const { id } = useParams();
@@ -25,9 +71,10 @@ export default function QuizAttempt() {
           navigate('/student/dashboard');
           return;
         }
+
         const res = await api.get(`/api/quizzes/${id}`);
         setQuiz(res.data);
-        const initialAnswers = new Array(res.data.questions.length).fill(null);
+        const initialAnswers = new Array(res.data.questions?.length || 0).fill(null);
         setAnswers(initialAnswers);
         answersRef.current = initialAnswers;
       } catch (err) {
@@ -59,10 +106,10 @@ export default function QuizAttempt() {
     return `${mins}:${secs}`;
   };
 
-  const handleChange = (questionIndex, selectedOption) => {
+  const handleChange = (questionIndex, value) => {
     if (submitted) return;
     const updatedAnswers = [...answers];
-    updatedAnswers[questionIndex] = selectedOption;
+    updatedAnswers[questionIndex] = value;
     setAnswers(updatedAnswers);
     answersRef.current = updatedAnswers;
   };
@@ -98,9 +145,12 @@ export default function QuizAttempt() {
 
   if (!quiz) return <div className="text-center mt-10 text-lg">Loading...</div>;
 
+  if (!quiz.questions || quiz.questions.length === 0) {
+    return <div className="text-center mt-10 text-lg text-red-600">No questions found for this quiz.</div>;
+  }
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      {/* Header with timer */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-4xl font-extrabold text-purple-700">{quiz.title}</h2>
         <div className="text-xl font-bold text-pink-600 bg-pink-100 px-4 py-2 rounded-full shadow">
@@ -108,10 +158,10 @@ export default function QuizAttempt() {
         </div>
       </div>
 
-      {/* Questions */}
       {quiz.questions.map((q, idx) => {
         const userAnswer = answers[idx];
-        const correctAnswer = q.correctAnswer; // fixed field name
+        const correctAnswer = q.correctAnswer;
+        const type = (q.type || 'mcq').toLowerCase();
 
         return (
           <div
@@ -122,55 +172,85 @@ export default function QuizAttempt() {
               {idx + 1}. {q.questionText}
             </p>
 
-            <div className="grid gap-4">
-              {q.options.map((opt, optIdx) => {
-                const isSelected = userAnswer === optIdx;
-                const isCorrect = correctAnswer === optIdx;
+            {type === 'mcq' ? (
+              <div className="grid gap-4">
+                {q.options.map((opt, optIdx) => {
+                  const isSelected = userAnswer === optIdx;
+                  const isCorrect = correctAnswer === optIdx;
 
-                let base =
-                  "p-4 rounded-xl border text-base font-medium transition duration-200 flex justify-between items-center";
-                let style = "bg-white border-gray-300 text-gray-800 hover:bg-pink-100";
-                let label = "";
+                  let base = "p-4 rounded-xl border text-base font-medium transition duration-200 flex justify-between items-center";
+                  let style = "bg-white border-gray-300 text-gray-800 hover:bg-pink-100";
+                  let label = "";
 
-                if (submitted) {
-                  if (isCorrect && isSelected) {
-                    style = "bg-green-200 border-green-600 text-green-900 font-semibold";
-                    label = "✅ Your Answer (Correct)";
-                  } else if (isCorrect && !isSelected) {
-                    style = "bg-green-100 border-green-500 text-green-800";
-                    label = "✔ Correct Answer";
-                  } else if (isSelected && !isCorrect) {
-                    style = "bg-red-200 border-red-600 text-red-900";
-                    label = "❌ Your Answer";
-                  } else {
-                    style = "bg-gray-100 border-gray-300 text-gray-500";
+                  if (submitted) {
+                    if (isCorrect && isSelected) {
+                      style = "bg-green-200 border-green-600 text-green-900 font-semibold";
+                      label = "✅ Your Answer (Correct)";
+                    } else if (isCorrect && !isSelected) {
+                      style = "bg-green-100 border-green-500 text-green-800";
+                      label = "✔ Correct Answer";
+                    } else if (isSelected && !isCorrect) {
+                      style = "bg-red-200 border-red-600 text-red-900";
+                      label = "❌ Your Answer";
+                    } else {
+                      style = "bg-gray-100 border-gray-300 text-gray-500";
+                    }
+                  } else if (isSelected) {
+                    style = "bg-purple-100 border-purple-500 text-purple-900";
                   }
-                } else if (isSelected) {
-                  style = "bg-purple-100 border-purple-500 text-purple-900";
-                }
 
-                return (
-                  <label
-                    key={optIdx}
-                    className={`${base} ${style} cursor-pointer`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${idx}`}
-                      value={optIdx}
-                      checked={isSelected}
-                      onChange={() => handleChange(idx, optIdx)}
-                      className="hidden"
-                      disabled={submitted}
-                    />
-                    <span>{opt}</span>
-                    {submitted && label && (
-                      <span className="text-sm italic select-none">{label}</span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
+                  return (
+                    <label key={optIdx} className={`${base} ${style} cursor-pointer`}>
+                      <input
+                        type="radio"
+                        name={`question-${idx}`}
+                        value={optIdx}
+                        checked={isSelected}
+                        onChange={() => handleChange(idx, optIdx)}
+                        className="hidden"
+                        disabled={submitted}
+                      />
+                      <span>{opt}</span>
+                      {submitted && label && (
+                        <span className="text-sm italic select-none">{label}</span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (<div className="flex flex-col gap-2">
+  <input
+    type="text"
+    placeholder="Enter your answer"
+    value={userAnswer ?? ''}
+    disabled={submitted}
+    readOnly
+    className="w-64 px-4 py-2 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+  />
+  <NumericKeypad
+    value={userAnswer ?? ''}
+    onChange={(val) => handleChange(idx, val)}
+    disabled={submitted}
+  />
+  {submitted && (
+    <p className="text-sm mt-1">
+     {Number(userAnswer) === Number(q.answer) ? (
+  <span className="text-green-700 font-semibold">✅ Correct Answer</span>
+) : (
+  <>
+    <span className="text-red-600 font-semibold">
+      ❌ Wrong Answer: {userAnswer || 'N/A'}
+    </span>
+    <br />
+    <span className="text-purple-700">✔ Correct Answer: {q.answer}</span>
+  </>
+)}
+
+    </p>
+  )}
+</div>
+
+            )}
           </div>
         );
       })}

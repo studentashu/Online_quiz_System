@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from './api';
-import { FileText } from 'lucide-react';
+import { FileText, Users, BarChart } from 'lucide-react';
 
 export default function UserQuizList() {
   const [quizzes, setQuizzes] = useState([]);
@@ -36,7 +36,7 @@ export default function UserQuizList() {
     fetchQuizzes();
   }, []);
 
-  const openTermsTab = (quizId) => {
+ const openTermsTab = (quizId) => {
   const termsText = `
   1. I confirm that I am the actual person taking this quiz and not impersonating anyone else.
   2. I agree not to use unfair means such as copying, searching online, or seeking external help during the quiz.
@@ -47,8 +47,9 @@ export default function UserQuizList() {
   7. I understand that failure to comply with these terms may lead to disciplinary action including a ban from future quizzes.
   `;
 
-  const newTab = window.open('', '_blank');
-  newTab.document.write(`
+  const newWindow = window.open('', '_blank', 'width=800,height=600');
+
+  newWindow.document.write(`
     <html>
       <head>
         <title>Quiz Terms & Conditions</title>
@@ -146,7 +147,7 @@ export default function UserQuizList() {
           });
 
           button.addEventListener('click', () => {
-            window.open('/student/quiz/${quizId}', '_blank');
+            window.open('/student/quiz/${quizId}', '_blank', 'width=2000,height=700');
             window.close();
           });
         </script>
@@ -154,53 +155,63 @@ export default function UserQuizList() {
     </html>
   `);
 
-  newTab.document.close();
+  newWindow.document.close();
 };
-
 
   if (loading) return <div className="text-center mt-10">Loading quizzes...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-fuchsia-200 py-10 px-4">
+    <div className="min-h-screen bg-white py-10 px-4">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-bold text-center bg-gradient-to-r from-fuchsia-600 to-purple-700 bg-clip-text text-transparent mb-12">
-          Available Quizzes
-        </h2>
+        <h2 className="text-3xl font-bold mb-8 text-gray-800">My Courses</h2>
 
-        {quizzes.length === 0 ? (
-          <p className="text-center text-gray-600 text-lg">No quizzes available at the moment.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="space-y-10">
+          {/* Example group for one stream */}
+          <div className="bg-blue-600 text-white rounded-t-lg px-6 py-4 flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-semibold">GATE Computer Science 2025</h3>
+              <p className="text-sm text-blue-100">Complete preparation for GATE CS with comprehensive coverage</p>
+            </div>
+            <div className="flex gap-4 items-center text-sm">
+              <div className="flex gap-1 items-center"><Users className="w-4 h-4" /> 2450 enrolled</div>
+              <div className="flex gap-1 items-center"><BarChart className="w-4 h-4" /> 78% completion</div>
+            </div>
+          </div>
+
+          <div className="bg-white shadow rounded-b-lg divide-y">
             {quizzes.map((quiz) => (
-              <div
-                key={quiz._id}
-                className="bg-white/60 backdrop-blur-md border border-pink-200 shadow-2xl rounded-2xl p-6"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <FileText className="text-fuchsia-600 w-6 h-6" />
-                  <h3 className="text-xl font-semibold text-gray-800">{quiz.title}</h3>
+              <div key={quiz._id} className="flex items-center justify-between px-6 py-4">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-800 mb-1">{quiz.title}</h4>
+                  <div className="text-sm text-gray-600 flex flex-wrap gap-4">
+                    <span>Duration: 120 minutes</span>
+                    <span>2 Sections</span>
+                    <span>50 Questions</span>
+                    <span className="px-2 py-0.5 text-white text-xs rounded bg-red-500">Hard</span>
+                    <span className="text-gray-500">1870 attempts • Avg. Score: 68.1%</span>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">{quiz.description || 'No description'}</p>
-
-                {attemptedMap[quiz._id] ? (
-                  <button
-                    className="w-full text-center bg-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg cursor-not-allowed"
-                    disabled
-                  >
-                    Attempted (Wait 24 hrs)
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openTermsTab(quiz._id)}
-                    className="w-full bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-fuchsia-600 hover:to-pink-500 text-white font-semibold px-4 py-2 rounded-lg"
-                  >
-                    Start Test
-                  </button>
-                )}
+                <div>
+                  {attemptedMap[quiz._id] ? (
+                    <button
+                      className="bg-gray-300 text-gray-700 font-semibold px-4 py-2 rounded cursor-not-allowed"
+                      disabled
+                    >
+                      Attempted
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => openTermsTab(quiz._id)}
+                      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded"
+                    >
+                      Start Test
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
