@@ -21,7 +21,7 @@ const followRoutes = require('./routes/follow');
 const notificationRoutes = require('./routes/notification');
 const adminRoutes = require('./routes/admin');
 const enrollmentsRoutes = require('./routes/enrollments');
-const emailRoutes = require('./routes/email');
+
 
 const app = express();
 
@@ -105,7 +105,8 @@ app.use('/api/follow', followRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', enrollmentsRoutes);
-app.use('/api', emailRoutes); // For nodemailer & messaging
+const emailRoutes = require('./routes/email');
+app.use('/api', emailRoutes);
 
 // ======================= ERROR HANDLER =======================
 app.use((err, req, res, next) => {

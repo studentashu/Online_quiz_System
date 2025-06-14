@@ -15,6 +15,7 @@ function NumericKeypad({ value, onChange, disabled }) {
     onChange((value ?? '').slice(0, -1));
   };
 
+
   const clear = () => {
     if (disabled) return;
     onChange('');
@@ -61,7 +62,16 @@ export default function QuizAttempt() {
   const [userScore, setUserScore] = useState(null);
   const [timeLeft, setTimeLeft] = useState(60);
   const answersRef = useRef([]);
-
+const sendConfirmationEmail = async (quizTitle) => {
+  try {
+    await api.post('/api/send-submission-email', {
+      quizTitle,
+      recipient: user?.email
+    });
+  } catch (err) {
+    console.error('📧 Email send error:', err.response?.data || err.message);
+  }
+};
   useEffect(() => {
     const checkAndFetchQuiz = async () => {
       try {
@@ -115,33 +125,35 @@ export default function QuizAttempt() {
   };
 
   const autoSubmit = async () => {
-    try {
-      const res = await api.post(`/api/quizzes/${id}/answer`, {
-        answers: answersRef.current,
-        email: user?.email,
-      });
-      setSubmitted(true);
-      setUserScore(res.data.score);
-      alert(`⏰ Time’s up!\nYour Score: ${res.data.score} / ${quiz.questions.length}`);
-    } catch (err) {
-      alert('❌ Failed to auto-submit quiz. Please try again.');
-    }
-  };
+  try {
+    const res = await api.post(`/api/quizzes/${id}/answer`, {
+      answers: answersRef.current,
+      email: user?.email,
+    });
+    setSubmitted(true);
+    setUserScore(res.data.score);
+    await sendConfirmationEmail(quiz.title); // <-- Email trigger
+    alert(`⏰ Time’s up!\nYour Score: ${res.data.score} / ${quiz.questions.length}`);
+  } catch (err) {
+    alert('❌ Failed to auto-submit quiz. Please try again.');
+  }
+};
 
-  const handleSubmit = async () => {
-    try {
-      const res = await api.post(`/api/quizzes/${id}/answer`, {
-        answers,
-        email: user?.email,
-      });
-      setSubmitted(true);
-      setUserScore(res.data.score);
-      alert(`✅ Answers submitted!\nYour Score: ${res.data.score} / ${quiz.questions.length}`);
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      alert('❌ Failed to submit quiz. Please try again.');
-    }
-  };
+const handleSubmit = async () => {
+  try {
+    const res = await api.post(`/api/quizzes/${id}/answer`, {
+      answers,
+      email: user?.email,
+    });
+    setSubmitted(true);
+    setUserScore(res.data.score);
+    await sendConfirmationEmail(quiz.title); // <-- Email trigger
+    alert(`✅ Answers submitted!\nYour Score: ${res.data.score} / ${quiz.questions.length}`);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    alert('❌ Failed to submit quiz. Please try again.');
+  }
+};
 
   if (!quiz) return <div className="text-center mt-10 text-lg">Loading...</div>;
 
